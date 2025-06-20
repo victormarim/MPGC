@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Turing - Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.system {
+            text-align: center;
+        }
+
+        .message-bubble {
+            display: inline-block;
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.system .message-bubble {
+            background: #e9ecef;
+            color: #495057;
+            max-width: 90%;
+            border-radius: 15px;
+        }
+
+        .responses-container {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 10px 0;
+        }
+
+        .response-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #6c757d;
+        }
+
+        .response-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .response-label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .response-text {
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+            min-width: 100px;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e9ecef;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 Teste de Turing</h1>
+            <p>Faça uma pergunta e tente descobrir qual resposta é humana!</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="message system">
+                <div class="message-bubble">
+                    Bem-vindo ao Teste de Turing! Faça uma pergunta e você receberá duas respostas: uma de uma IA e outra de um humano. Tente descobrir qual é qual! 🧠
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <div class="status" id="status">Pronto para sua pergunta!</div>
+            <div class="input-container">
+                <input 
+                    type="text" 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Digite sua pergunta aqui..."
+                    maxlength="500"
+                >
+                <button class="send-button" id="sendButton" onclick="sendMessage()">
+                    Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração - ALTERE ESTAS URLs PARA SUAS URLs REAIS
+        const API_BASE_URL = 'https://seu-n8n.com/webhook';
+        
+        let sessionId = generateSessionId();
+        let isWaiting = false;
+
+        function generateSessionId() {
+            return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function addMessage(content, type = 'system') {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.innerHTML = content;
+            
+            messageDiv.appendChild(bubble);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addUserMessage(text) {
+            addMessage(text, 'user');
+        }
+
+        function addResponsesMessage(responses) {
+            const content = `
+                <div class="responses-container">
+                    <div style="text-align: center; margin-bottom: 15px; font-weight: bold; color: #495057;">
+                        Duas respostas chegaram! Qual você acha que é humana? 🤔
+                    </div>
+                    <div class="response-item">
+                        <div class="response-label">Resposta A:</div>
+                        <div class="response-text">${responses.a}</div>
+                    </div>
+                    <div class="response-item">
+                        <div class="response-label">Resposta B:</div>
+                        <div class="response-text">${responses.b}</div>
+                    </div>
+                </div>
+            `;
+            addMessage(content, 'system');
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function setLoading(loading) {
+            const button = document.getElementById('sendButton');
+            const input = document.getElementById('messageInput');
+            
+            isWaiting = loading;
+            button.disabled = loading;
+            input.disabled = loading;
+            
+            if (loading) {
+                button.innerHTML = '<div class="loading">Aguardando...</div>';
+                updateStatus('Aguardando respostas da IA e do humano...');
+            } else {
+                button.textContent = 'Enviar';
+                updateStatus('Pronto para sua próxima pergunta!');
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || isWaiting) return;
+            
+            // Adiciona mensagem do usuário
+            addUserMessage(message);
+            
+            // Limpa input e define loading
+            input.value = '';
+            setLoading(true);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/turing-question`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message,
+                        sessionId: sessionId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Adiciona as respostas formatadas
+                if (data.responses) {
+                    addResponsesMessage(data.responses);
+                } else {
+                    addMessage('Erro: Resposta inválida recebida.', 'system');
+                }
+                
+            } catch (error) {
+                console.error('Erro ao enviar mensagem:', error);
+                addMessage('❌ Erro ao enviar mensagem. Tente novamente.', 'system');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !isWaiting) {
+                sendMessage();
+            }
+        });
+
+        // Foco inicial no input
+        document.getElementById('messageInput').focus();
+    </script>
+</body>
+</html>

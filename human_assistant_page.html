@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente Humano - Teste de Turing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .assistant-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 900px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .assistant-header {
+            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .assistant-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+
+        .assistant-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .questions-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .questions-list {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 4px solid #11998e;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .question-time {
+            font-size: 0.8rem;
+            color: #6c757d;
+            background: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 10px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .response-area {
+            position: relative;
+        }
+
+        .response-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .response-textarea:focus {
+            border-color: #11998e;
+        }
+
+        .response-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .send-response-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .send-response-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .send-response-btn:disabled {
+            opacity: 0.6;
+            transform: none;
+            cursor: not-allowed;
+        }
+
+        .no-questions {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            margin: 50px 0;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transform: translateX(300px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e9ecef;
+            border-top: 3px solid #11998e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="assistant-container">
+        <div class="assistant-header">
+            <h1>👤 Assistente Humano</h1>
+            <p>Responda as perguntas de forma natural e humana</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-info">
+                <div class="status-dot"></div>
+                <span>Aguardando perguntas...</span>
+            </div>
+            <div id="questionCount">0 perguntas pendentes</div>
+        </div>
+        
+        <div class="questions-container">
+            <div class="questions-list" id="questionsList">
+                <div class="no-questions" id="noQuestions">
+                    Nenhuma pergunta pendente. Aguardando usuários fazerem perguntas... 🤔
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        Nova pergunta recebida!
+    </div>
+
+    <script>
+        // Configuração - ALTERE ESTAS URLs PARA SUAS URLs REAIS
+        const API_BASE_URL = 'https://seu-n8n.com/webhook';
+        
+        let questions = [];
+        let pollingInterval;
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+
+        function updateQuestionCount() {
+            const pendingCount = questions.filter(q => !q.answered).length;
+            document.getElementById('questionCount').textContent = 
+                `${pendingCount} pergunta${pendingCount !== 1 ? 's' : ''} pendente${pendingCount !== 1 ? 's' : ''}`;
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        function createQuestionCard(question) {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.innerHTML = `
+                <div class="question-header">
+                    <div class="question-time">${formatTime(question.timestamp)}</div>
+                </div>
+                <div class="question-text">${question.text}</div>
+                <div class="response-area">
+                    <textarea 
+                        class="response-textarea" 
+                        placeholder="Digite sua resposta aqui... Seja natural e humano!"
+                        maxlength="1000"
+                        data-question-id="${question.id}"
+                    ></textarea>
+                    <div class="response-actions">
+                        <div class="char-counter">0/1000</div>
+                        <button class="send-response-btn" onclick="sendResponse('${question.id}')">
+                            Enviar Resposta
+                        </button>
+                    </div>
+                    <div class="loading-overlay" id="loading-${question.id}">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Adiciona evento para contador de caracteres
+            const textarea = card.querySelector('.response-textarea');
+            const counter = card.querySelector('.char-counter');
+            
+            textarea.addEventListener('input', function() {
+                counter.textContent = `${this.value.length}/1000`;
+            });
+            
+            return card;
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsList');
+            const noQuestions = document.getElementById('noQuestions');
+            
+            // Filtra apenas perguntas não respondidas
+            const pendingQuestions = questions.filter(q => !q.answered);
+            
+            if (pendingQuestions.length === 0) {
+                noQuestions.style.display = 'block';
+                // Remove todas as outras divs
+                const cards = container.querySelectorAll('.question-card');
+                cards.forEach(card => card.remove());
+            } else {
+                noQuestions.style.display = 'none';
+                
+                // Remove cards existentes
+                const existingCards = container.querySelectorAll('.question-card');
+                existingCards.forEach(card => card.remove());
+                
+                // Adiciona cards das perguntas pendentes
+                pendingQuestions.forEach(question => {
+                    const card = createQuestionCard(question);
+                    container.appendChild(card);
+                });
+            }
+            
+            updateQuestionCount();
+        }
+
+        async function sendResponse(questionId) {
+            const textarea = document.querySelector(`[data-question-id="${questionId}"]`);
+            const response = textarea.value.trim();
+            
+            if (!response) {
+                alert('Por favor, digite uma resposta!');
+                return;
+            }
+            
+            const question = questions.find(q => q.id === questionId);
+            if (!question) return;
+            
+            // Mostra loading
+            const loading = document.getElementById(`loading-${questionId}`);
+            loading.classList.add('show');
+            
+            try {
+                const apiResponse = await fetch(`${API_BASE_URL}/human-response`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        response: response,
+                        sessionId: question.sessionId,
+                        questionId: questionId
+                    })
+                });
+                
+                if (!apiResponse.ok) {
+                    throw new Error(`HTTP error! status: ${apiResponse.status}`);
+                }
+                
+                // Marca pergunta como respondida
+                question.answered = true;
+                
+                // Re-renderiza a lista
+                renderQuestions();
+                
+                showNotification('Resposta enviada com sucesso! ✅');
+                
+            } catch (error) {
+                console.error('Erro ao enviar resposta:', error);
+                alert('Erro ao enviar resposta. Tente novamente.');
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        // Simula o recebimento de perguntas (em uma implementação real, isso viria via WebSocket ou polling)
+        function simulateNewQuestion() {
+            // Esta função será substituída pela lógica real de recebimento de perguntas
+            // Por agora, você pode chamar addNewQuestion() manualmente para testar
+        }
+
+        function addNewQuestion(questionText, sessionId) {
+            const newQuestion = {
+                id: Date.now().toString(),
+                text: questionText,
+                sessionId: sessionId,
+                timestamp: Date.now(),
+                answered: false
+            };
+            
+            questions.unshift(newQuestion); // Adiciona no início
+            renderQuestions();
+            showNotification('Nova pergunta recebida! 📝');
+        }
+
+        // Inicialização
+        renderQuestions();
+        
+        // Para testar, você pode usar esta função no console:
+        // addNewQuestion("Qual é o seu filme favorito?", "test_session_123");
+        
+        console.log('Assistente Humano carregado!');
+        console.log('Para testar, use: addNewQuestion("Sua pergunta aqui", "session_id")');
+    </script>
+</body>
+</html>
