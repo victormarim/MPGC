@@ -218,35 +218,14 @@
     </div>
 
     <script>
-        // Configuração da API com proxy CORS
-        const N8N_BASE_URL = 'https://n8n-aula.educasaopaulo.com.br/webhook-test/turing-question';
+        // Configuração da API
+        const API_BASE_URL = 'https://n8n-aula.educasaopaulo.com.br/webhook-test/turing-question';
         let currentSessionId = null;
         let isWaitingForResponse = false;
 
         // Gerar ID único para a sessão
         function generateSessionId() {
             return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-        }
-
-        // Função para fazer requisições via JSONP (contorna CORS)
-        function makeJSONPRequest(url, callback) {
-            const script = document.createElement('script');
-            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-            
-            window[callbackName] = function(data) {
-                callback(null, data);
-                document.head.removeChild(script);
-                delete window[callbackName];
-            };
-            
-            script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-            script.onerror = function() {
-                callback(new Error('JSONP request failed'));
-                document.head.removeChild(script);
-                delete window[callbackName];
-            };
-            
-            document.head.appendChild(script);
         }
 
         // Adicionar mensagem ao chat
@@ -266,7 +245,7 @@
             statusMessages.forEach(msg => msg.remove());
         }
 
-        // Enviar mensagem usando múltiplas estratégias
+        // Enviar mensagem
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const sendButton = document.getElementById('sendButton');
@@ -289,76 +268,84 @@
             sendButton.disabled = true;
             sendButton.textContent = 'Enviando...';
 
-            // Estratégia 1: Tentar fetch direto
             try {
-                const response = await fetch(`${N8N_BASE_URL}/turing-question?question=${encodeURIComponent(message)}&sessionId=${encodeURIComponent(currentSessionId)}`, {
+                // Enviar pergunta via GET com query parameters
+                const response = await fetch(`${API_BASE_URL}/turing-question?question=${encodeURIComponent(message)}&sessionId=${encodeURIComponent(currentSessionId)}`, {
                     method: 'GET',
-                    mode: 'no-cors'
-                });
-                
-                addMessage('✅ Pergunta enviada! Aguardando respostas da IA e do humano...', 'status');
-                simulateResponses(); // Simular respostas por enquanto
-                
-            } catch (error) {
-                console.log('Fetch direto falhou, tentando proxy...');
-                
-                // Estratégia 2: Usar proxy CORS
-                try {
-                    const proxyUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(N8N_BASE_URL + '/turing-question?question=' + encodeURIComponent(message) + '&sessionId=' + encodeURIComponent(currentSessionId))}`;
-                    
-                    const proxyResponse = await fetch(proxyUrl);
-                    
-                    if (proxyResponse.ok) {
-                        addMessage('✅ Pergunta enviada via proxy! Aguardando respostas da IA e do humano...', 'status');
-                        simulateResponses();
-                    } else {
-                        throw new Error('Proxy também falhou');
+                    headers: {
+                        'Content-Type': 'application/json',
                     }
+                });
+
+                if (response.ok) {
+                    addMessage('✅ Pergunta enviada! Aguardando respostas da IA e do humano...', 'status');
                     
-                } catch (proxyError) {
-                    console.log('Proxy falhou, usando simulação...');
-                    
-                    // Estratégia 3: Simular resposta (para demonstração)
-                    addMessage('⚠️ Modo demonstração - Simulando respostas...', 'status');
-                    simulateResponses();
+                    // Iniciar polling para verificar respostas
+                    pollForResponses();
+                } else {
+                    throw new Error(`Erro HTTP: ${response.status}`);
                 }
+
+            } catch (error) {
+                console.error('Erro ao enviar mensagem:', error);
+                addMessage('❌ Erro ao enviar mensagem. Tente novamente.', 'error');
+                isWaitingForResponse = false;
             } finally {
                 sendButton.disabled = false;
                 sendButton.textContent = 'Enviar';
             }
         }
 
-        // Simular respostas para demonstração (enquanto não conseguimos conectar)
-        function simulateResponses() {
-            // Simular resposta da IA após 2 segundos
-            setTimeout(() => {
-                const aiResponses = [
-                    "Como uma IA, posso processar informações rapidamente, mas não tenho experiências pessoais reais.",
-                    "Analiso padrões e dados para fornecer respostas úteis e relevantes.",
-                    "Minha perspectiva é baseada em algoritmos e processamento de linguagem natural.",
-                    "Posso ajudar com uma ampla gama de tópicos usando meu treinamento em dados.",
-                    "Meu objetivo é ser útil e preciso em minhas respostas."
-                ];
-                const randomAI = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-                addMessage(`🤖 Resposta A: ${randomAI}`, 'ai');
-                
-                // Simular resposta humana após mais 3 segundos
-                setTimeout(() => {
-                    const humanResponses = [
-                        "Na minha experiência pessoal, isso sempre me fez pensar de forma diferente.",
-                        "Lembro-me de quando isso aconteceu comigo, foi bem interessante.",
-                        "Esse é um tópico que me emociona, sempre tive opiniões fortes sobre isso.",
-                        "Cresci acreditando nisso, mas mudei de opinião com o tempo.",
-                        "Tenho uma história engraçada relacionada a isso que aconteceu comigo."
-                    ];
-                    const randomHuman = humanResponses[Math.floor(Math.random() * humanResponses.length)];
-                    addMessage(`👤 Resposta B: ${randomHuman}`, 'human');
-                    
-                    addMessage('🎯 Agora tente adivinhar: qual resposta veio da IA e qual veio do humano?', 'status');
+        // Polling para verificar respostas
+        async function pollForResponses() {
+            const maxAttempts = 60; // 5 minutos máximo
+            let attempts = 0;
+            let aiResponse = null;
+            let humanResponse = null;
+
+            const pollInterval = setInterval(async () => {
+                attempts++;
+
+                try {
+                    // Verificar se há respostas disponíveis
+                    const response = await fetch(`${API_BASE_URL}/check-responses?sessionId=${encodeURIComponent(currentSessionId)}`, {
+                        method: 'GET'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        if (data.aiResponse && !aiResponse) {
+                            aiResponse = data.aiResponse;
+                            addMessage(`🤖 Resposta A: ${aiResponse}`, 'ai');
+                        }
+                        
+                        if (data.humanResponse && !humanResponse) {
+                            humanResponse = data.humanResponse;
+                            addMessage(`👤 Resposta B: ${humanResponse}`, 'human');
+                        }
+
+                        // Se temos ambas as respostas, parar o polling
+                        if (aiResponse && humanResponse) {
+                            clearInterval(pollInterval);
+                            addMessage('🎯 Agora tente adivinhar: qual resposta veio da IA e qual veio do humano?', 'status');
+                            isWaitingForResponse = false;
+                            return;
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Erro no polling:', error);
+                }
+
+                // Timeout após máximo de tentativas
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval);
+                    addMessage('⏰ Tempo limite excedido. Algumas respostas podem não ter chegado.', 'error');
                     isWaitingForResponse = false;
-                }, 3000);
-                
-            }, 2000);
+                }
+
+            }, 5000); // Verificar a cada 5 segundos
         }
 
         // Permitir envio com Enter
@@ -372,7 +359,6 @@
         // Focar no input quando a página carrega
         window.addEventListener('load', () => {
             document.getElementById('messageInput').focus();
-            addMessage('🔧 Sistema em modo demonstração - As respostas são simuladas para mostrar o funcionamento!', 'status');
         });
     </script>
 </body>
