@@ -3,440 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apresentador - Teste de Turing</title>
+    <title>Painel do Apresentador - Teste de Turing</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-    </style>
-</head>
-<body>
-    <div class="presenter-container">
-        <div class="header">
-            <h1>🎯 Apresentador - Teste de Turing</h1>
-            <p>Painel de controle para conduzir a aula e revelar as respostas</p>
-        </div>
-
-        <div class="controls-panel">
-            <h3 class="controls-title">📊 Estatísticas em Tempo Real</h3>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalQuestions">0</div>
-                    <div class="stat-label">Perguntas Feitas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="completedConversations">0</div>
-                    <div class="stat-label">Respostas Completas</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="pendingResponses">0</div>
-                    <div class="stat-label">Aguardando Humano</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="activeUsers">0</div>
-                    <div class="stat-label">Usuários Ativos</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="conversations-section">
-            <div class="conversations-header">
-                <h3 class="conversations-title">💬 Conversas Ativas</h3>
-                <button class="refresh-btn" onclick="loadConversations()">
-                    🔄 Atualizar
-                </button>
-            </div>
-            
-            <div id="conversationsContainer">
-                <div class="loading-section">
-                    <div class="spinner"></div>
-                    <p>Carregando conversas...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Configuração - ALTERE ESTAS URLs PARA SUAS URLs REAIS
-        const API_BASE_URL = 'https://n8n-aula.educasaopaulo.com.br/webhook-test/turing-question';
-        const SUPABASE_URL = 'https://seu-projeto.supabase.co';
-        const SUPABASE_ANON_KEY = 'sua_chave_anonima';
-        
-        let conversations = [];
-        let refreshInterval;
-
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
         }
-
-        function updateStats() {
-            const total = conversations.length;
-            const completed = conversations.filter(c => c.humanResponse && c.aiResponse).length;
-            const pending = conversations.filter(c => !c.humanResponse || !c.aiResponse).length;
-            const active = conversations.filter(c => {
-                const timeDiff = Date.now() - new Date(c.timestamp).getTime();
-                return timeDiff < 300000; // 5 minutos
-            }).length;
-
-            document.getElementById('totalQuestions').textContent = total;
-            document.getElementById('completedConversations').textContent = completed;
-            document.getElementById('pendingResponses').textContent = pending;
-            document.getElementById('activeUsers').textContent = active;
-        }
-
-        function createConversationCard(conversation) {
-            const isComplete = conversation.humanResponse && conversation.aiResponse;
-            const card = document.createElement('div');
-            card.className = 'conversation-card';
-            
-            card.innerHTML = `
-                <div class="conversation-header">
-                    <div class="conversation-info">
-                        <div class="session-id">${conversation.sessionId}</div>
-                        <div class="timestamp">${formatTime(conversation.timestamp)}</div>
-                    </div>
-                    <div class="status-badge ${isComplete ? 'status-complete' : 'status-pending'}">
-                        ${isComplete ? '✅ Completo' : '⏳ Aguardando'}
-                    </div>
-                </div>
-                
-                <div class="conversation-content">
-                    <div class="question-section">
-                        <div class="question-label">
-                            ❓ Pergunta do Usuário
-                        </div>
-                        <div class="question-text">${conversation.question}</div>
-                    </div>
-                    
-                    ${isComplete ? `
-                        <div class="responses-section">
-                            <div class="response-box response-human">
-                                <div class="response-header">
-                                    <div class="response-label human">Resposta A</div>
-                                    <div class="response-type human">HUMANO</div>
-                                </div>
-                                <div class="response-text">${conversation.humanResponse}</div>
-                            </div>
-                            
-                            <div class="response-box response-ai">
-                                <div class="response-header">
-                                    <div class="response-label ai">Resposta B</div>
-                                    <div class="response-type ai">IA</div>
-                                </div>
-                                <div class="response-text">${conversation.aiResponse}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="reveal-section">
-                            <div class="reveal-title">🎭 Para Revelar na Apresentação</div>
-                            <div class="reveal-info">
-                                <strong>A (Vermelho) = HUMANO</strong> • <strong>B (Azul) = IA</strong>
-                            </div>
-                        </div>
-                    ` : `
-                        <div style="text-align: center; padding: 20px; color: #6c757d; font-style: italic;">
-                            ${conversation.aiResponse ? 
-                                '🤖 IA respondeu, aguardando resposta humana...' : 
-                                '⏳ Aguardando ambas as respostas...'}
-                        </div>
-                    `}
-                </div>
-            `;
-            
-            return card;
-        }
-
-        function renderConversations() {
-            const container = document.getElementById('conversationsContainer');
-            
-            if (conversations.length === 0) {
-                container.innerHTML = `
-                    <div class="no-conversations">
-                        Nenhuma conversa registrada ainda.<br>
-                        Aguardando usuários fazerem perguntas... 🤔
-                    </div>
-                `;
-                return;
-            }
-            
-            // Ordena conversas por timestamp (mais recentes primeiro)
-            const sortedConversations = [...conversations].sort((a, b) => 
-                new Date(b.timestamp) - new Date(a.timestamp)
-            );
-            
-            container.innerHTML = '';
-            sortedConversations.forEach(conversation => {
-                const card = createConversationCard(conversation);
-                container.appendChild(card);
-            });
-        }
-
-        async function loadConversations() {
-            try {
-                // Em uma implementação real, você faria uma chamada para sua API/Supabase aqui
-                // Por enquanto, simulamos alguns dados para demonstração
-                
-                const container = document.getElementById('conversationsContainer');
-                container.innerHTML = `
-                    <div class="loading-section">
-                        <div class="spinner"></div>
-                        <p>Carregando conversas...</p>
-                    </div>
-                `;
-                
-                // Simula um delay de carregamento
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Dados simulados - substitua pela chamada real à sua API
-                conversations = [
-                    {
-                        sessionId: 'user_1671234567_abc123',
-                        question: 'Qual é o seu filme favorito e por quê?',
-                        aiResponse: 'Eu diria que é "Cidade de Deus". É um filme que me marcou muito pela forma crua e realista de mostrar a realidade das favelas no Rio. A fotografia é incrível e a história é envolvente do início ao fim.',
-                        humanResponse: 'Difícil escolher só um, mas acho que "Pulp Fiction" sempre me impressiona. Tarantino conseguiu criar uma narrativa não-linear que funciona perfeitamente, e os diálogos são geniais.',
-                        timestamp: new Date(Date.now() - 300000).toISOString() // 5 minutos atrás
-                    },
-                    {
-                        sessionId: 'user_1671234890_def456',
-                        question: 'Como você lidaria com o estresse no trabalho?',
-                        aiResponse: 'Costumo fazer pausas curtas durante o dia, mesmo que sejam só 5 minutos para respirar. Também ajuda muito organizar as tarefas por prioridade. Nos fins de semana, tento desconectar completamente.',
-                        humanResponse: null, // Ainda aguardando resposta humana
-                        timestamp: new Date(Date.now() - 120000).toISOString() // 2 minutos atrás
-                    }
-                ];
-                
-                renderConversations();
-                updateStats();
-                
-            } catch (error) {
-                console.error('Erro ao carregar conversas:', error);
-                document.getElementById('conversationsContainer').innerHTML = `
-                    <div class="no-conversations">
-                        ❌ Erro ao carregar conversas.<br>
-                        <button class="refresh-btn" onclick="loadConversations()" style="margin-top: 10px;">
-                            Tentar Novamente
-                        </button>
-                    </div>
-                `;
-            }
-        }
-
-        // Função para adicionar nova conversa (será chamada quando chegarem dados reais)
-        function addNewConversation(sessionId, question) {
-            const newConversation = {
-                sessionId: sessionId,
-                question: question,
-                aiResponse: null,
-                humanResponse: null,
-                timestamp: new Date().toISOString()
-            };
-            
-            conversations.unshift(newConversation);
-            renderConversations();
-            updateStats();
-        }
-
-        // Função para atualizar resposta (quando IA ou humano responder)
-        function updateConversationResponse(sessionId, response, type) {
-            const conversation = conversations.find(c => c.sessionId === sessionId);
-            if (conversation) {
-                if (type === 'ai') {
-                    conversation.aiResponse = response;
-                } else if (type === 'human') {
-                    conversation.humanResponse = response;
-                }
-                renderConversations();
-                updateStats();
-            }
-        }
-
-        // Inicialização
-        loadConversations();
-        
-        // Atualiza automaticamente a cada 30 segundos
-        refreshInterval = setInterval(() => {
-            loadConversations();
-        }, 30000);
-        
-        // Para testar, você pode usar estas funções no console:
-        // addNewConversation("test_session_123", "Esta é uma pergunta de teste?");
-        // updateConversationResponse("test_session_123", "Esta é uma resposta da IA", "ai");
-        // updateConversationResponse("test_session_123", "Esta é uma resposta humana", "human");
-        
-        console.log('Painel do Apresentador carregado!');
-        console.log('Para testar, use as funções: addNewConversation(), updateConversationResponse()');
-    </script>
-</body>
-</html>
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             min-height: 100vh;
             padding: 20px;
         }
 
-        .presenter-container {
+        .container {
             max-width: 1200px;
             margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
 
         .header {
-            background: white;
-            border-radius: 15px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
             padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             text-align: center;
         }
 
         .header h1 {
-            color: #333;
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
 
         .header p {
-            color: #666;
             font-size: 1.1rem;
+            opacity: 0.9;
         }
 
-        .controls-panel {
-            background: white;
-            border-radius: 15px;
+        .content {
+            padding: 40px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .stats-panel {
+            background: #f8f9ff;
+            border-left: 4px solid #ff6b6b;
             padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 15px;
         }
 
-        .controls-title {
-            font-size: 1.4rem;
+        .stats-panel h3 {
             color: #333;
             margin-bottom: 20px;
-            text-align: center;
+            font-size: 1.3rem;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
         }
 
-        .stat-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
+        .stat-item:last-child {
+            border-bottom: none;
         }
 
         .stat-label {
             color: #666;
-            font-size: 0.9rem;
+            font-weight: 500;
         }
 
-        .conversations-section {
-            background: white;
-            border-radius: 15px;
+        .stat-value {
+            color: #ff6b6b;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .control-panel {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 15px;
         }
 
-        .conversations-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .conversations-title {
-            font-size: 1.4rem;
+        .control-panel h3 {
             color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
         }
 
-        .refresh-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .control-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            font-weight: 600;
+            margin: 5px;
             transition: transform 0.2s ease;
         }
 
-        .refresh-btn:hover {
+        .control-btn:hover {
             transform: translateY(-2px);
         }
 
-        .conversation-card {
-            border: 2px solid #e9ecef;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: all 0.3s ease;
+        .control-btn.secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
         }
 
-        .conversation-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        .sessions-container {
+            background: white;
+            border-radius: 15px;
+            padding: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .conversation-header {
+        .sessions-container h3 {
             background: #f8f9fa;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e9ecef;
+            padding: 20px;
+            margin: 0;
+            border-radius: 15px 15px 0 0;
+            color: #333;
+            border-bottom: 1px solid #eee;
+        }
+
+        .session-item {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+
+        .session-item:hover {
+            background-color: #f8f9ff;
+        }
+
+        .session-item:last-child {
+            border-bottom: none;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .session-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        .conversation-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            margin-bottom: 15px;
         }
 
         .session-id {
-            font-family: monospace;
-            background: #e9ecef;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            color: #495057;
-        }
-
-        .timestamp {
-            color: #6c757d;
+            font-weight: bold;
+            color: #ff6b6b;
             font-size: 0.9rem;
         }
 
-        .status-badge {
+        .session-status {
             padding: 5px 12px;
-            border-radius: 20px;
+            border-radius: 15px;
             font-size: 0.8rem;
-            font-weight: 600;
+            font-weight: bold;
         }
 
         .status-pending {
@@ -444,123 +186,132 @@
             color: #856404;
         }
 
-        .status-complete {
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-ai-only {
             background: #d1ecf1;
             color: #0c5460;
         }
 
-        .conversation-content {
-            padding: 20px;
-        }
-
-        .question-section {
-            margin-bottom: 20px;
-        }
-
-        .question-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         .question-text {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
             font-size: 1.1rem;
-            line-height: 1.5;
-            border-left: 4px solid #6c757d;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.6;
         }
 
-        .responses-section {
+        .responses-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
+            margin-bottom: 15px;
         }
 
         .response-box {
+            background: #f8f9fa;
+            padding: 15px;
             border-radius: 10px;
-            padding: 18px;
-            position: relative;
+            border-left: 4px solid;
         }
 
-        .response-human {
-            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-            border-left: 5px solid #f44336;
+        .ai-response {
+            border-left-color: #007bff;
         }
 
-        .response-ai {
-            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            border-left: 5px solid #2196f3;
-        }
-
-        .response-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
+        .human-response {
+            border-left-color: #28a745;
         }
 
         .response-label {
             font-weight: bold;
-            font-size: 1.1rem;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
         }
 
-        .response-label.human {
-            color: #c62828;
+        .ai-response .response-label {
+            color: #007bff;
         }
 
-        .response-label.ai {
-            color: #1565c0;
+        .human-response .response-label {
+            color: #28a745;
         }
 
-        .response-type {
-            font-size: 0.8rem;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        .response-type.human {
-            background: #f44336;
-            color: white;
-        }
-
-        .response-type.ai {
-            background: #2196f3;
-            color: white;
-        }
-
-        .response-text {
-            line-height: 1.6;
+        .response-content {
             color: #333;
-            font-size: 1rem;
+            line-height: 1.5;
         }
 
-        .no-conversations {
+        .session-meta {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
             text-align: center;
-            color: #6c757d;
-            font-style: italic;
             padding: 40px;
+            color: #666;
         }
 
-        .loading-section {
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .footer {
             text-align: center;
-            padding: 40px;
-            color: #6c757d;
+            padding: 20px;
+            color: #666;
+            background: #f8f9fa;
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e9ecef;
-            border-top: 4px solid #667eea;
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .responses-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #ff6b6b;
             border-radius: 50%;
+            width: 30px;
+            height: 30px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 20px auto;
         }
 
         @keyframes spin {
@@ -568,34 +319,243 @@
             100% { transform: rotate(360deg); }
         }
 
-        .reveal-section {
-            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
-            border: 2px solid #ffc107;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            text-align: center;
+        .live-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
         }
 
-        .reveal-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #f57f17;
-            margin-bottom: 15px;
-        }
-
-        .reveal-info {
-            color: #f57f17;
-            font-size: 1rem;
-            line-height: 1.5;
-        }
-
-        @media (max-width: 768px) {
-            .responses-section {
-                grid-template-columns: 1fr;
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
             }
+            70% {
+                box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Painel do Apresentador</h1>
+            <p>Monitore todas as sessões do Teste de Turing em tempo real</p>
+        </div>
+        
+        <div class="content">
+            <div class="dashboard-grid">
+                <div class="stats-panel">
+                    <h3>📊 Estatísticas</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Total de Sessões</span>
+                        <span class="stat-value" id="totalSessions">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Aguardando Resposta</span>
+                        <span class="stat-value" id="pendingSessions">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Completadas</span>
+                        <span class="stat-value" id="completedSessions">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Apenas IA</span>
+                        <span class="stat-value" id="aiOnlySessions">0</span>
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <h3>🎮 Controles</h3>
+                    <button onclick="loadSessions()" class="refresh-btn">
+                        <span class="live-indicator"></span>
+                        Atualizar Dados
+                    </button>
+                    <div>
+                        <button onclick="exportData()" class="control-btn">
+                            📊 Exportar Dados
+                        </button>
+                        <button onclick="clearOldSessions()" class="control-btn secondary">
+                            🗑️ Limpar Antigas
+                        </button>
+                    </div>
+                </div>
+            </div>
             
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+            <div class="sessions-container">
+                <h3>📝 Sessões Ativas</h3>
+                <div id="sessionsList">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Dashboard atualizado automaticamente a cada 15 segundos</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da API
+        const API_BASE_URL = 'https://n8n-aula.educasaopaulo.com.br/webhook-test/turing-question';
+        let sessionsData = [];
+
+        // Carregar sessões
+        async function loadSessions() {
+            const sessionsList = document.getElementById('sessionsList');
+            
+            sessionsList.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                // Buscar dados das sessões via GET
+                const response = await fetch(`${API_BASE_URL}/presenter-data`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    sessionsData = data.sessions || [];
+                    
+                    updateStats();
+                    renderSessions();
+                } else {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar sessões:', error);
+                sessionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">⚠️</div>
+                        <p>Erro ao conectar com o servidor</p>
+                        <p>Tente atualizar a página</p>
+                    </div>
+                `;
             }
         }
+
+        // Atualizar estatísticas
+        function updateStats() {
+            const total = sessionsData.length;
+            const pending = sessionsData.filter(s => s.status === 'pending').length;
+            const completed = sessionsData.filter(s => s.status === 'completed').length;
+            const aiOnly = sessionsData.filter(s => s.status === 'ai-only').length;
+
+            document.getElementById('totalSessions').textContent = total;
+            document.getElementById('pendingSessions').textContent = pending;
+            document.getElementById('completedSessions').textContent = completed;
+            document.getElementById('aiOnlySessions').textContent = aiOnly;
+        }
+
+        // Renderizar sessões
+        function renderSessions() {
+            const sessionsList = document.getElementById('sessionsList');
+            
+            if (sessionsData.length === 0) {
+                sessionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">💤</div>
+                        <p>Nenhuma sessão ativa</p>
+                        <p>As sessões aparecerão aqui quando os usuários começarem a fazer perguntas</p>
+                    </div>
+                `;
+                return;
+            }
+
+            sessionsList.innerHTML = sessionsData.map(session => {
+                const statusClass = `status-${session.status}`;
+                const statusText = {
+                    'pending': 'Aguardando',
+                    'completed': 'Completado',
+                    'ai-only': 'Apenas IA'
+                }[session.status] || session.status;
+
+                return `
+                    <div class="session-item">
+                        <div class="session-header">
+                            <span class="session-id">${session.sessionId}</span>
+                            <span class="session-status ${statusClass}">${statusText}</span>
+                        </div>
+                        
+                        <div class="session-meta">
+                            Criado: ${new Date(session.timestamp).toLocaleString('pt-BR')} | 
+                            Última atualização: ${new Date(session.lastUpdate).toLocaleString('pt-BR')}
+                        </div>
+                        
+                        <div class="question-text">${session.question}</div>
+                        
+                        <div class="responses-grid">
+                            <div class="response-box ai-response">
+                                <div class="response-label">🤖 Resposta da IA</div>
+                                <div class="response-content">
+                                    ${session.aiResponse || 'Aguardando resposta...'}
+                                </div>
+                            </div>
+                            
+                            <div class="response-box human-response">
+                                <div class="response-label">👤 Resposta Humana</div>
+                                <div class="response-content">
+                                    ${session.humanResponse || 'Aguardando resposta...'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Exportar dados
+        function exportData() {
+            if (sessionsData.length === 0) {
+                alert('Nenhum dado para exportar');
+                return;
+            }
+
+            const dataStr = JSON.stringify(sessionsData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `turing-test-data-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        // Limpar sessões antigas
+        async function clearOldSessions() {
+            if (confirm('Tem certeza que deseja limpar todas as sessões antigas (mais de 24h)?')) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/clear-old-sessions`, {
+                        method: 'GET'
+                    });
+
+                    if (response.ok) {
+                        alert('Sessões antigas removidas com sucesso!');
+                        loadSessions();
+                    } else {
+                        throw new Error(`Erro HTTP: ${response.status}`);
+                    }
+
+                } catch (error) {
+                    console.error('Erro ao limpar sessões:', error);
+                    alert('Erro ao limpar sessões antigas');
+                }
+            }
+        }
+
+        // Auto-refresh a cada 15 segundos
+        setInterval(loadSessions, 15000);
+
+        // Carregar dados quando a página carregar
+        window.addEventListener('load', loadSessions);
+    </script>
+</body>
+</html>
