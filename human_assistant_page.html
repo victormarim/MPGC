@@ -13,228 +13,230 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 20px;
         }
 
-        .assistant-container {
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 900px;
-            height: 85vh;
-            display: flex;
-            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
-        .assistant-header {
-            background: linear-gradient(90deg, #11998e 0%, #38ef7d 100%);
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 20px;
+            padding: 30px;
             text-align: center;
         }
 
-        .assistant-header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
 
-        .assistant-header p {
+        .header p {
+            font-size: 1.1rem;
             opacity: 0.9;
-            font-size: 0.9rem;
         }
 
-        .status-bar {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .content {
+            padding: 40px;
         }
 
-        .status-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
-        }
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #28a745;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .questions-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .questions-list {
-            flex: 1;
+        .status-panel {
+            background: #f8f9ff;
+            border-left: 4px solid #4facfe;
             padding: 20px;
-            overflow-y: auto;
-            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 30px;
         }
 
-        .question-card {
+        .status-text {
+            color: #555;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .pending-questions {
             background: white;
             border-radius: 15px;
+            padding: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .pending-questions h3 {
+            background: #f8f9fa;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-left: 4px solid #11998e;
-            animation: slideIn 0.4s ease-out;
+            margin: 0;
+            border-radius: 15px 15px 0 0;
+            color: #333;
+            border-bottom: 1px solid #eee;
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
+        .question-item {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
         }
 
-        .question-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 15px;
+        .question-item:hover {
+            background-color: #f8f9ff;
         }
 
-        .question-time {
-            font-size: 0.8rem;
-            color: #6c757d;
-            background: #e9ecef;
-            padding: 5px 10px;
-            border-radius: 10px;
+        .question-item:last-child {
+            border-bottom: none;
+            border-radius: 0 0 15px 15px;
         }
 
         .question-text {
             font-size: 1.1rem;
-            font-weight: 600;
             color: #333;
             margin-bottom: 15px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
-        .response-area {
-            position: relative;
+        .question-meta {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
         }
 
-        .response-textarea {
-            width: 100%;
-            min-height: 100px;
-            padding: 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-family: inherit;
-            resize: vertical;
+        .response-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .response-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 16px;
             outline: none;
             transition: border-color 0.3s ease;
         }
 
-        .response-textarea:focus {
-            border-color: #11998e;
+        .response-input:focus {
+            border-color: #4facfe;
         }
 
-        .response-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        .char-counter {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-
-        .send-response-btn {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        .submit-response-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            font-weight: 600;
             transition: transform 0.2s ease;
+            min-width: 120px;
         }
 
-        .send-response-btn:hover {
+        .submit-response-btn:hover {
             transform: translateY(-2px);
         }
 
-        .send-response-btn:disabled {
+        .submit-response-btn:disabled {
             opacity: 0.6;
-            transform: none;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .no-questions {
-            text-align: center;
-            color: #6c757d;
-            font-style: italic;
-            margin: 50px 0;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transform: translateX(300px);
-            transition: transform 0.3s ease;
-            z-index: 1000;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-        }
-
-        .loading-overlay.show {
+        .question-actions {
             display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .spinner {
+        .action-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: #545b62;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            background: #f8f9fa;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .response-container {
+                flex-direction: column;
+            }
+            
+            .question-actions {
+                justify-content: center;
+            }
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4facfe;
+            border-radius: 50%;
             width: 30px;
             height: 30px;
-            border: 3px solid #e9ecef;
-            border-top: 3px solid #11998e;
-            border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin: 20px auto;
         }
 
         @keyframes spin {
@@ -244,208 +246,238 @@
     </style>
 </head>
 <body>
-    <div class="assistant-container">
-        <div class="assistant-header">
+    <div class="container">
+        <div class="header">
             <h1>👤 Assistente Humano</h1>
-            <p>Responda as perguntas de forma natural e humana</p>
+            <p>Responda às perguntas para participar do Teste de Turing</p>
         </div>
         
-        <div class="status-bar">
-            <div class="status-info">
-                <div class="status-dot"></div>
-                <span>Aguardando perguntas...</span>
+        <div class="content">
+            <div class="status-panel">
+                <div class="status-text" id="statusText">
+                    Aguardando novas perguntas...
+                </div>
+                <button onclick="loadQuestions()" class="refresh-btn">
+                    🔄 Atualizar Perguntas
+                </button>
             </div>
-            <div id="questionCount">0 perguntas pendentes</div>
-        </div>
-        
-        <div class="questions-container">
-            <div class="questions-list" id="questionsList">
-                <div class="no-questions" id="noQuestions">
-                    Nenhuma pergunta pendente. Aguardando usuários fazerem perguntas... 🤔
+            
+            <div class="pending-questions">
+                <h3>📝 Perguntas Pendentes</h3>
+                <div id="questionsList">
+                    <div class="loading-spinner"></div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="notification" id="notification">
-        Nova pergunta recebida!
+        
+        <div class="footer">
+            <p>Suas respostas ajudam a tornar o teste mais interessante!</p>
+        </div>
     </div>
 
     <script>
-        // Configuração - ALTERE ESTAS URLs PARA SUAS URLs REAIS
+        // Configuração da API
         const API_BASE_URL = 'https://n8n-aula.educasaopaulo.com.br/webhook-test/turing-question';
-        
-        let questions = [];
-        let pollingInterval;
+        let questionsData = [];
 
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString('pt-BR', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-        }
-
-        function updateQuestionCount() {
-            const pendingCount = questions.filter(q => !q.answered).length;
-            document.getElementById('questionCount').textContent = 
-                `${pendingCount} pergunta${pendingCount !== 1 ? 's' : ''} pendente${pendingCount !== 1 ? 's' : ''}`;
-        }
-
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.classList.add('show');
+        // Carregar perguntas pendentes
+        async function loadQuestions() {
+            const questionsList = document.getElementById('questionsList');
+            const statusText = document.getElementById('statusText');
             
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
+            questionsList.innerHTML = '<div class="loading-spinner"></div>';
+            statusText.textContent = 'Carregando perguntas...';
+
+            try {
+                // Buscar perguntas pendentes via GET
+                const response = await fetch(`${API_BASE_URL}/pending-questions`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    questionsData = data.questions || [];
+                    
+                    if (questionsData.length > 0) {
+                        statusText.textContent = `${questionsData.length} pergunta(s) aguardando resposta`;
+                        renderQuestions();
+                    } else {
+                        statusText.textContent = 'Nenhuma pergunta pendente no momento';
+                        questionsList.innerHTML = `
+                            <div class="empty-state">
+                                <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">💤</div>
+                                <p>Nenhuma pergunta pendente</p>
+                                <p>As novas perguntas aparecerão aqui automaticamente</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    throw new Error(`Erro HTTP: ${response.status}`);
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar perguntas:', error);
+                statusText.textContent = 'Erro ao carregar perguntas';
+                questionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">⚠️</div>
+                        <p>Erro ao conectar com o servidor</p>
+                        <p>Tente atualizar a página</p>
+                    </div>
+                `;
+            }
         }
 
-        function createQuestionCard(question) {
-            const card = document.createElement('div');
-            card.className = 'question-card';
-            card.innerHTML = `
-                <div class="question-header">
-                    <div class="question-time">${formatTime(question.timestamp)}</div>
-                </div>
-                <div class="question-text">${question.text}</div>
-                <div class="response-area">
-                    <textarea 
-                        class="response-textarea" 
-                        placeholder="Digite sua resposta aqui... Seja natural e humano!"
-                        maxlength="1000"
-                        data-question-id="${question.id}"
-                    ></textarea>
-                    <div class="response-actions">
-                        <div class="char-counter">0/1000</div>
-                        <button class="send-response-btn" onclick="sendResponse('${question.id}')">
+        // Renderizar lista de perguntas
+        function renderQuestions() {
+            const questionsList = document.getElementById('questionsList');
+            
+            if (questionsData.length === 0) {
+                questionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">💤</div>
+                        <p>Nenhuma pergunta pendente</p>
+                    </div>
+                `;
+                return;
+            }
+
+            questionsList.innerHTML = questionsData.map((question, index) => `
+                <div class="question-item">
+                    <div class="question-text">${question.text}</div>
+                    <div class="question-meta">
+                        Session ID: ${question.sessionId} | 
+                        Recebida: ${new Date(question.timestamp).toLocaleString('pt-BR')}
+                    </div>
+                    <div class="response-container">
+                        <input type="text" 
+                               class="response-input" 
+                               placeholder="Digite sua resposta..."
+                               id="response_${index}"
+                               onkeypress="handleKeyPress(event, '${question.sessionId}', ${index})">
+                        <button class="submit-response-btn" 
+                                onclick="submitResponse('${question.sessionId}', ${index})">
                             Enviar Resposta
                         </button>
                     </div>
-                    <div class="loading-overlay" id="loading-${question.id}">
-                        <div class="spinner"></div>
+                    <div class="question-actions">
+                        <button class="action-btn" onclick="markAsAnswered('${question.sessionId}', ${index})">
+                            ✓ Marcar como Respondida
+                        </button>
+                        <button class="action-btn" onclick="skipQuestion('${question.sessionId}', ${index})">
+                            ⏭️ Pular Pergunta
+                        </button>
                     </div>
                 </div>
-            `;
-            
-            // Adiciona evento para contador de caracteres
-            const textarea = card.querySelector('.response-textarea');
-            const counter = card.querySelector('.char-counter');
-            
-            textarea.addEventListener('input', function() {
-                counter.textContent = `${this.value.length}/1000`;
-            });
-            
-            return card;
+            `).join('');
         }
 
-        function renderQuestions() {
-            const container = document.getElementById('questionsList');
-            const noQuestions = document.getElementById('noQuestions');
-            
-            // Filtra apenas perguntas não respondidas
-            const pendingQuestions = questions.filter(q => !q.answered);
-            
-            if (pendingQuestions.length === 0) {
-                noQuestions.style.display = 'block';
-                // Remove todas as outras divs
-                const cards = container.querySelectorAll('.question-card');
-                cards.forEach(card => card.remove());
-            } else {
-                noQuestions.style.display = 'none';
-                
-                // Remove cards existentes
-                const existingCards = container.querySelectorAll('.question-card');
-                existingCards.forEach(card => card.remove());
-                
-                // Adiciona cards das perguntas pendentes
-                pendingQuestions.forEach(question => {
-                    const card = createQuestionCard(question);
-                    container.appendChild(card);
-                });
-            }
-            
-            updateQuestionCount();
-        }
+        // Enviar resposta
+        async function submitResponse(sessionId, questionIndex) {
+            const responseInput = document.getElementById(`response_${questionIndex}`);
+            const response = responseInput.value.trim();
 
-        async function sendResponse(questionId) {
-            const textarea = document.querySelector(`[data-question-id="${questionId}"]`);
-            const response = textarea.value.trim();
-            
             if (!response) {
-                alert('Por favor, digite uma resposta!');
+                alert('Por favor, digite uma resposta');
                 return;
             }
-            
-            const question = questions.find(q => q.id === questionId);
-            if (!question) return;
-            
-            // Mostra loading
-            const loading = document.getElementById(`loading-${questionId}`);
-            loading.classList.add('show');
-            
+
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Enviando...';
+
             try {
-                const apiResponse = await fetch(`${API_BASE_URL}/human-response`, {
-                    method: 'POST',
+                // Enviar resposta via GET
+                const apiResponse = await fetch(`${API_BASE_URL}/human-response?sessionId=${encodeURIComponent(sessionId)}&response=${encodeURIComponent(response)}`, {
+                    method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        response: response,
-                        sessionId: question.sessionId,
-                        questionId: questionId
-                    })
+                    }
                 });
-                
-                if (!apiResponse.ok) {
-                    throw new Error(`HTTP error! status: ${apiResponse.status}`);
+
+                if (apiResponse.ok) {
+                    // Remover pergunta da lista
+                    questionsData.splice(questionIndex, 1);
+                    renderQuestions();
+                    
+                    // Atualizar contador
+                    const statusText = document.getElementById('statusText');
+                    if (questionsData.length > 0) {
+                        statusText.textContent = `${questionsData.length} pergunta(s) aguardando resposta`;
+                    } else {
+                        statusText.textContent = 'Todas as perguntas foram respondidas!';
+                    }
+                    
+                    alert('Resposta enviada com sucesso!');
+                } else {
+                    throw new Error(`Erro HTTP: ${apiResponse.status}`);
                 }
-                
-                // Marca pergunta como respondida
-                question.answered = true;
-                
-                // Re-renderiza a lista
-                renderQuestions();
-                
-                showNotification('Resposta enviada com sucesso! ✅');
-                
+
             } catch (error) {
                 console.error('Erro ao enviar resposta:', error);
                 alert('Erro ao enviar resposta. Tente novamente.');
             } finally {
-                loading.classList.remove('show');
+                button.disabled = false;
+                button.textContent = 'Enviar Resposta';
             }
         }
 
-        // Simula o recebimento de perguntas (em uma implementação real, isso viria via WebSocket ou polling)
-        function simulateNewQuestion() {
-            // Esta função será substituída pela lógica real de recebimento de perguntas
-            // Por agora, você pode chamar addNewQuestion() manualmente para testar
+        // Marcar pergunta como respondida
+        async function markAsAnswered(sessionId, questionIndex) {
+            try {
+                // Marcar como respondida via GET
+                const response = await fetch(`${API_BASE_URL}/mark-answered?sessionId=${encodeURIComponent(sessionId)}`, {
+                    method: 'GET'
+                });
+
+                if (response.ok) {
+                    questionsData.splice(questionIndex, 1);
+                    renderQuestions();
+                    
+                    const statusText = document.getElementById('statusText');
+                    if (questionsData.length > 0) {
+                        statusText.textContent = `${questionsData.length} pergunta(s) aguardando resposta`;
+                    } else {
+                        statusText.textContent = 'Todas as perguntas foram processadas!';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Erro ao marcar como respondida:', error);
+            }
         }
 
-        function addNewQuestion(questionText, sessionId) {
-            const newQuestion = {
-                id: Date.now().toString(),
-                text: questionText,
-                sessionId: sessionId,
-                timestamp: Date.now(),
-                answered: false
-            };
-            
-            questions.unshift(newQuestion); // Adiciona no início
-            renderQuestions();
-            showNotification('Nova pergunta recebida! 📝');
+        // Pular pergunta
+        function skipQuestion(sessionId, questionIndex) {
+            if (confirm('Tem certeza que deseja pular esta pergunta?')) {
+                questionsData.splice(questionIndex, 1);
+                renderQuestions();
+                
+                const statusText = document.getElementById('statusText');
+                if (questionsData.length > 0) {
+                    statusText.textContent = `${questionsData.length} pergunta(s) aguardando resposta`;
+                } else {
+                    statusText.textContent = 'Nenhuma pergunta pendente no momento';
+                }
+            }
         }
 
-        // Inicialização
-        renderQuestions();
-        
-        // Para testar, você pode usar esta função no console:
-        // addNewQuestion("Qual é o seu filme favorito?", "test_session_123");
-        
-        console.log('Assistente Humano carregado!');
-        console.log('Para testar, use: addNewQuestion("Sua pergunta aqui", "session_id")');
+        // Permitir envio com Enter
+        function handleKeyPress(event, sessionId, questionIndex) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                submitResponse(sessionId, questionIndex);
+            }
+        }
+
+        // Auto-refresh a cada 30 segundos
+        setInterval(loadQuestions, 30000);
+
+        // Carregar perguntas quando a página carregar
+        window.addEventListener('load', loadQuestions);
     </script>
 </body>
 </html>
