@@ -79,6 +79,7 @@
             border-radius: 18px;
             max-width: 80%;
             word-wrap: break-word;
+            animation: slideIn 0.3s ease-out;
         }
 
         .user-message {
@@ -113,6 +114,14 @@
             color: #c62828;
             border: 1px solid #ef5350;
             text-align: center;
+        }
+
+        .typing-message {
+            background: #f1f3f4;
+            color: #666;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+            font-style: italic;
         }
 
         .input-container {
@@ -163,6 +172,17 @@
             padding: 20px;
             color: #666;
             background: #f8f9fa;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @media (max-width: 768px) {
@@ -241,11 +261,11 @@
         // Limpar mensagens de status anteriores
         function clearStatusMessages() {
             const chatContainer = document.getElementById('chatContainer');
-            const statusMessages = chatContainer.querySelectorAll('.status-message, .error-message');
+            const statusMessages = chatContainer.querySelectorAll('.status-message, .error-message, .typing-message');
             statusMessages.forEach(msg => msg.remove());
         }
 
-        // Enviar mensagem
+        // Enviar mensagem (baseado no código que funciona)
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const sendButton = document.getElementById('sendButton');
@@ -268,27 +288,70 @@
             sendButton.disabled = true;
             sendButton.textContent = 'Enviando...';
 
+            // Adicionar indicador de digitação
+            addMessage('Enviando pergunta para a IA e o humano...', 'typing');
+
             try {
-                // Enviar pergunta via GET com query parameters
-                const response = await fetch(`${API_BASE_URL}/turing-question?question=${encodeURIComponent(message)}&sessionId=${encodeURIComponent(currentSessionId)}`, {
-                    method: 'GET',
+                console.log('🚀 Enviando para n8n:', {
+                    question: message,
+                    sessionId: currentSessionId
+                });
+                console.log('🌐 URL:', `${API_BASE_URL}/turing-question`);
+
+                // Usar o mesmo padrão do código que funciona
+                const response = await fetch(`${API_BASE_URL}/turing-question`, {
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message,
+                        sessionId: currentSessionId
+                    }),
+                    mode: 'cors'
                 });
 
-                if (response.ok) {
-                    addMessage('✅ Pergunta enviada! Aguardando respostas da IA e do humano...', 'status');
-                    
-                    // Iniciar polling para verificar respostas
-                    pollForResponses();
-                } else {
-                    throw new Error(`Erro HTTP: ${response.status}`);
+                console.log('📊 Status da resposta:', response.status);
+                console.log('📋 Headers da resposta:', response.headers);
+
+                // Verificar se a resposta é OK
+                if (!response.ok) {
+                    console.error('❌ Erro HTTP:', response.status, response.statusText);
+                    throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
                 }
 
+                // Tentar pegar primeiro como texto para debug
+                const responseText = await response.text();
+                console.log('📝 Resposta como texto:', responseText);
+
+                // Remover indicador de digitação
+                clearStatusMessages();
+
+                // Se chegou até aqui, a pergunta foi enviada com sucesso
+                addMessage('✅ Pergunta enviada! Aguardando respostas da IA e do humano...', 'status');
+
+                // Iniciar polling para verificar respostas
+                pollForResponses();
+
             } catch (error) {
-                console.error('Erro ao enviar mensagem:', error);
-                addMessage('❌ Erro ao enviar mensagem. Tente novamente.', 'error');
+                console.error('💥 Erro completo:', error);
+                console.error('📍 Stack trace:', error.stack);
+                
+                clearStatusMessages();
+                
+                let errorMessage = '❌ Erro de conexão: ';
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage += 'Não foi possível conectar ao servidor. Verifique sua internet e se o n8n está ativo.';
+                } else if (error.message.includes('CORS')) {
+                    errorMessage += 'Erro de CORS. O servidor n8n precisa permitir requisições do seu domínio.';
+                } else if (error.message.includes('HTTP')) {
+                    errorMessage += error.message;
+                } else {
+                    errorMessage += 'Erro desconhecido. Verifique o console para mais detalhes.';
+                }
+                
+                addMessage(errorMessage, 'error');
                 isWaitingForResponse = false;
             } finally {
                 sendButton.disabled = false;
@@ -308,19 +371,37 @@
 
                 try {
                     // Verificar se há respostas disponíveis
-                    const response = await fetch(`${API_BASE_URL}/check-responses?sessionId=${encodeURIComponent(currentSessionId)}`, {
-                        method: 'GET'
+                    const response = await fetch(`${API_BASE_URL}/check-responses`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            sessionId: currentSessionId
+                        }),
+                        mode: 'cors'
                     });
 
                     if (response.ok) {
-                        const data = await response.json();
+                        const responseText = await response.text();
+                        console.log('📝 Check responses:', responseText);
                         
-                        if (data.aiResponse && !aiResponse) {
+                        let data;
+                        try {
+                            data = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.log('❌ Erro ao fazer parse:', parseError);
+                            return;
+                        }
+                        
+                        // Extrair respostas
+                        if (data && data.aiResponse && !aiResponse) {
                             aiResponse = data.aiResponse;
                             addMessage(`🤖 Resposta A: ${aiResponse}`, 'ai');
                         }
                         
-                        if (data.humanResponse && !humanResponse) {
+                        if (data && data.humanResponse && !humanResponse) {
                             humanResponse = data.humanResponse;
                             addMessage(`👤 Resposta B: ${humanResponse}`, 'human');
                         }
